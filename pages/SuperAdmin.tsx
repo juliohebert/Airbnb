@@ -8,6 +8,7 @@ const SuperAdmin: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('97.00');
 
   // Load users whenever authentication state changes or component mounts
@@ -140,6 +141,7 @@ const SuperAdmin: React.FC = () => {
               <thead>
                 <tr className="bg-primary/5 text-primary text-[10px] font-bold uppercase tracking-widest">
                   <th className="p-5 border-b border-primary/10">Gestor & Propriedade</th>
+                  <th className="p-5 border-b border-primary/10">Cadastro</th>
                   <th className="p-5 border-b border-primary/10">Expiração</th>
                   <th className="p-5 border-b border-primary/10">Status</th>
                   <th className="p-5 border-b border-primary/10">Histórico</th>
@@ -152,6 +154,12 @@ const SuperAdmin: React.FC = () => {
                     <td className="p-5">
                       <div className="font-bold text-primary">{u.propertyName}</div>
                       <div className="text-xs opacity-60 font-medium">{u.ownerName} • {u.email}</div>
+                    </td>
+                    <td className="p-5">
+                      <div className="text-sm font-medium text-primary/70">
+                        {new Date(u.createdAt).toLocaleDateString()}
+                      </div>
+                      <div className="text-[10px] opacity-40 uppercase font-bold tracking-tighter">Data de Registro</div>
                     </td>
                     <td className="p-5">
                       <div className="text-sm font-bold text-text-dark dark:text-text-light">
@@ -180,14 +188,17 @@ const SuperAdmin: React.FC = () => {
                       </button>
                     </td>
                     <td className="p-5">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex -space-x-2">
+                      <button 
+                        onClick={() => { setSelectedUser(u); setShowHistoryModal(true); }}
+                        className="flex items-center group cursor-pointer"
+                        title="Clique para ver histórico completo"
+                      >
+                        <div className="flex -space-x-2 mr-2">
                           {u.paymentHistory && u.paymentHistory.length > 0 ? (
                             u.paymentHistory.slice(0, 4).map(p => (
                               <div 
                                 key={p.id} 
-                                className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-[10px] border-2 border-white shadow-sm font-bold" 
-                                title={`${formatCurrency(p.amount)} em ${new Date(p.date).toLocaleDateString()}`}
+                                className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-[10px] border-2 border-white shadow-sm font-bold"
                               >
                                 $
                               </div>
@@ -196,7 +207,12 @@ const SuperAdmin: React.FC = () => {
                             <span className="text-[10px] italic opacity-40">Sem faturas</span>
                           )}
                         </div>
-                      </div>
+                        {u.paymentHistory && u.paymentHistory.length > 4 && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md group-hover:bg-primary group-hover:text-white transition-colors">
+                            +{u.paymentHistory.length - 4}
+                          </span>
+                        )}
+                      </button>
                     </td>
                     <td className="p-5 text-right">
                       <button 
@@ -213,6 +229,54 @@ const SuperAdmin: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* History Modal */}
+      {showHistoryModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-card-dark w-full max-w-lg rounded-3xl p-8 shadow-2xl border border-primary/20 animate-in fade-in zoom-in duration-200 flex flex-col max-h-[80vh]">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h2 className="font-serif text-2xl text-primary">Extrato de Pagamentos</h2>
+                <p className="text-xs opacity-60 uppercase font-bold tracking-widest">{selectedUser.propertyName}</p>
+              </div>
+              <button 
+                onClick={() => setShowHistoryModal(false)}
+                className="p-2 hover:bg-primary/5 rounded-full text-primary/40 hover:text-primary transition-colors"
+              >
+                <span className="material-icons-outlined">close</span>
+              </button>
+            </div>
+            
+            <div className="flex-grow overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+              {selectedUser.paymentHistory && selectedUser.paymentHistory.length > 0 ? (
+                selectedUser.paymentHistory.map((payment) => (
+                  <div key={payment.id} className="bg-primary/5 dark:bg-black/20 p-4 rounded-2xl border border-primary/10 flex justify-between items-center">
+                    <div>
+                      <div className="text-xs font-bold text-primary uppercase mb-1">{new Date(payment.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+                      <div className="text-xs opacity-60">{payment.method} • ID: {payment.id}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-primary text-lg">{formatCurrency(payment.amount)}</div>
+                      <div className="text-[10px] text-green-600 font-bold uppercase flex items-center justify-end gap-1">
+                        <span className="material-icons-outlined text-xs">check_circle</span> Recebido
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-10 opacity-40 italic">Nenhum pagamento registrado.</div>
+              )}
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-primary/10 flex justify-between items-center">
+              <span className="text-sm font-bold text-primary/60">Total Investido:</span>
+              <span className="text-xl font-serif text-primary">
+                {formatCurrency(selectedUser.paymentHistory?.reduce((sum, p) => sum + p.amount, 0) || 0)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Payment Modal */}
       {showPaymentModal && selectedUser && (
