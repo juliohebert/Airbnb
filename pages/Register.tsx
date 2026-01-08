@@ -27,8 +27,10 @@ const Register: React.FC = () => {
       password: formData.password,
       propertyName: formData.propertyName,
       ownerName: formData.ownerName,
-      isActive: true, // Defaulting to active on registration
-      createdAt: Date.now()
+      isActive: true,
+      createdAt: Date.now(),
+      subscriptionExpiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 days trial
+      paymentHistory: []
     };
 
     localStorage.setItem('casa_verde_users', JSON.stringify([...users, newUser]));

@@ -1,12 +1,22 @@
 
+export interface PaymentRecord {
+  id: string;
+  date: number;
+  amount: number;
+  status: 'paid' | 'pending' | 'failed';
+  method: string;
+}
+
 export interface User {
   id: string;
   email: string;
   password?: string;
   propertyName: string;
   ownerName: string;
-  isActive: boolean; // Field to control license
+  isActive: boolean;
   createdAt: number;
+  subscriptionExpiresAt?: number;
+  paymentHistory: PaymentRecord[];
 }
 
 export interface HostInfo {

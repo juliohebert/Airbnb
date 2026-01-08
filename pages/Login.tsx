@@ -52,9 +52,21 @@ const Login: React.FC = () => {
           </button>
         </form>
 
-        <div className="mt-8 text-center text-sm">
-          <p className="opacity-70 mb-2">Não tem uma conta?</p>
-          <Link to="/register" className="text-primary font-bold hover:underline">Cadastre sua Propriedade</Link>
+        <div className="mt-8 text-center text-sm space-y-4">
+          <div>
+            <p className="opacity-70 mb-2">Não tem uma conta?</p>
+            <Link to="/register" className="text-primary font-bold hover:underline">Cadastre sua Propriedade</Link>
+          </div>
+          
+          <div className="pt-6 border-t border-primary/5">
+            <button 
+              onClick={() => navigate('/super-admin')}
+              className="flex items-center justify-center gap-2 mx-auto text-[10px] font-bold text-primary/30 hover:text-primary transition-colors uppercase tracking-widest"
+            >
+              <span className="material-icons-outlined text-xs">admin_panel_settings</span>
+              Painel de Licenciamento
+            </button>
+          </div>
         </div>
       </div>
     </div>
