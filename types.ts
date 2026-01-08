@@ -77,6 +77,7 @@ export interface CheckOutStep {
 
 export interface GuideData {
   hostId: string;
+  propertyId?: string; // New: Unique ID for the specific property
   host: HostInfo;
   property: PropertyInfo;
   wifi: WifiInfo;

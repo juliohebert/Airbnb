@@ -71,32 +71,34 @@ const Layout: React.FC<{ children: React.ReactNode, isGuest?: boolean }> = ({ ch
       </main>
 
       <footer className="text-center py-8 opacity-40 text-[10px] md:text-xs font-sans relative z-10 border-t border-primary/5 mt-12 px-4">
-        © 2024 Guia Digital Casa Verde.
+        © 2026 Guia Digital Casa Verde.
       </footer>
     </div>
   );
 };
 
 const GuestRouter: React.FC = () => {
-  const { hostId } = useParams();
+  const { hostId } = useParams(); // Now this acts as the unique property ID
   const [data, setData] = useState<GuideData | null>(null);
   const [isSuspended, setIsSuspended] = useState(false);
 
   useEffect(() => {
     const allUsers: User[] = JSON.parse(localStorage.getItem('casa_verde_users') || '[]');
-    const allGuides = JSON.parse(localStorage.getItem('casa_verde_all_guides') || '{}');
+    const allGuides: { [key: string]: GuideData } = JSON.parse(localStorage.getItem('casa_verde_all_guides') || '{}');
     
-    const user = allUsers.find(u => u.id === hostId);
+    // Find the guide data for this specific property ID
+    const guide = allGuides[hostId || ''];
     
-    if (user && !user.isActive) {
-      setIsSuspended(true);
-      return;
-    }
-
-    if (allGuides[hostId || '']) {
-      setData(allGuides[hostId || '']);
+    if (guide) {
+      // Check if the owner of this property is active
+      const owner = allUsers.find(u => u.id === guide.hostId);
+      if (owner && !owner.isActive) {
+        setIsSuspended(true);
+        return;
+      }
+      setData(guide);
     } else if (hostId === 'demo') {
-      setData({ ...INITIAL_GUIDE_DATA, hostId: 'demo' });
+      setData({ ...INITIAL_GUIDE_DATA, hostId: 'demo', propertyId: 'demo' });
     }
   }, [hostId]);
 
@@ -161,18 +163,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 const AdminWrapper: React.FC = () => {
-  const user = JSON.parse(localStorage.getItem('casa_verde_user') || '{}');
-  const [allGuides, setAllGuides] = useState(() => JSON.parse(localStorage.getItem('casa_verde_all_guides') || '{}'));
-  
-  const currentGuideData = allGuides[user.id] || { ...INITIAL_GUIDE_DATA, hostId: user.id };
-
-  const handleUpdate = (newData: GuideData) => {
-    const updated = { ...allGuides, [user.id]: newData };
-    setAllGuides(updated);
-    localStorage.setItem('casa_verde_all_guides', JSON.stringify(updated));
-  };
-
-  return <Management data={currentGuideData} onUpdate={handleUpdate} />;
+  // Pass a dummy guide to satisfy Management props, it will manage its own state now
+  return <Management data={null as any} onUpdate={() => {}} />;
 };
 
 export default App;
