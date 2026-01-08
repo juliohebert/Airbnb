@@ -68,7 +68,7 @@ const Layout: React.FC<{ children: React.ReactNode, isGuest?: boolean }> = ({ ch
       </main>
 
       <footer className="text-center py-8 opacity-60 text-sm font-sans relative z-10 border-t border-primary/10 mt-12">
-        © 2024 Guia de Boas-vindas Casa Verde.
+        © 2026 Guia de Boas-vindas. Tenha uma estadia maravilhosa!
       </footer>
     </div>
   );
