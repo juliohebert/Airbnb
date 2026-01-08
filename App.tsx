@@ -15,11 +15,13 @@ import Feedback from './pages/Feedback';
 import Management from './pages/Management';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import SuperAdmin from './pages/SuperAdmin';
 
 const Layout: React.FC<{ children: React.ReactNode, isGuest?: boolean }> = ({ children, isGuest }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { hostId } = useParams();
   const currentUser = JSON.parse(localStorage.getItem('casa_verde_user') || 'null');
 
   useEffect(() => {
@@ -32,64 +34,89 @@ const Layout: React.FC<{ children: React.ReactNode, isGuest?: boolean }> = ({ ch
     navigate('/login');
   };
 
+  const homeLink = isGuest ? `/guide/${hostId}` : (currentUser ? '/admin' : '/login');
+
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark text-text-dark dark:text-text-light transition-colors duration-300 font-sans relative overflow-x-hidden">
-      {/* Background Decor */}
-      <div className="fixed top-0 left-0 w-32 h-32 pointer-events-none opacity-20 dark:opacity-10 z-0">
+      <div className="fixed top-0 left-0 w-24 h-24 md:w-32 md:h-32 pointer-events-none opacity-10 dark:opacity-5 z-0">
         <DecorativeLeaf className="w-full h-full rotate-180 transform -translate-x-4 -translate-y-4" />
       </div>
-      <div className="fixed top-0 right-0 w-48 h-48 pointer-events-none opacity-30 dark:opacity-10 z-0">
+      <div className="fixed top-0 right-0 w-32 h-32 md:w-48 md:h-48 pointer-events-none opacity-20 dark:opacity-5 z-0">
         <DecorativeLeaf className="w-full h-full" />
       </div>
 
-      <nav className="relative z-50 w-full p-6 flex justify-between items-center max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <span className="material-icons-outlined text-primary text-3xl">cottage</span>
-          <span className="font-serif text-xl text-primary font-bold tracking-wide">Casa Verde</span>
-        </div>
-        <div className="flex items-center gap-4">
+      <nav className="relative z-50 w-full p-4 md:p-6 flex justify-between items-center max-w-7xl mx-auto">
+        <Link to={homeLink} className="flex items-center gap-2 active:scale-95 transition-transform">
+          <span className="material-icons-outlined text-primary text-2xl md:text-3xl">cottage</span>
+          <span className="font-serif text-lg md:text-xl text-primary font-bold tracking-wide">Casa Verde</span>
+        </Link>
+        <div className="flex items-center gap-2 md:gap-4">
           {!isGuest && currentUser && (
-            <button onClick={handleLogout} className="text-red-600 font-bold text-sm flex items-center gap-1">
-              <span className="material-icons-outlined text-sm">logout</span> Sair
+            <button onClick={handleLogout} className="text-red-600 font-bold text-xs md:text-sm flex items-center gap-1 p-2">
+              <span className="material-icons-outlined text-sm">logout</span> <span className="hidden sm:inline">Sair</span>
             </button>
           )}
           <button 
             onClick={() => setIsDarkMode(!isDarkMode)}
             className="p-2 rounded-full bg-card-light dark:bg-card-dark text-primary hover:bg-primary hover:text-white transition-colors"
           >
-            <span className="material-icons-outlined block dark:hidden">dark_mode</span>
-            <span className="material-icons-outlined hidden dark:block">light_mode</span>
+            <span className="material-icons-outlined block dark:hidden text-xl">dark_mode</span>
+            <span className="material-icons-outlined hidden dark:block text-xl">light_mode</span>
           </button>
         </div>
       </nav>
 
-      <main className="relative z-10 w-full">
+      <main className="relative z-10 w-full px-4 md:px-6">
         {children}
       </main>
 
-      <footer className="text-center py-8 opacity-60 text-sm font-sans relative z-10 border-t border-primary/10 mt-12">
-        © 2024 Guia de Boas-vindas Casa Verde.
+      <footer className="text-center py-8 opacity-40 text-[10px] md:text-xs font-sans relative z-10 border-t border-primary/5 mt-12 px-4">
+        © 2024 Guia Digital Casa Verde.
       </footer>
     </div>
   );
 };
 
-// Component to load data based on HostId
 const GuestRouter: React.FC = () => {
   const { hostId } = useParams();
   const [data, setData] = useState<GuideData | null>(null);
+  const [isSuspended, setIsSuspended] = useState(false);
 
   useEffect(() => {
+    const allUsers: User[] = JSON.parse(localStorage.getItem('casa_verde_users') || '[]');
     const allGuides = JSON.parse(localStorage.getItem('casa_verde_all_guides') || '{}');
+    
+    const user = allUsers.find(u => u.id === hostId);
+    
+    if (user && !user.isActive) {
+      setIsSuspended(true);
+      return;
+    }
+
     if (allGuides[hostId || '']) {
       setData(allGuides[hostId || '']);
+    } else if (hostId === 'demo') {
+      setData({ ...INITIAL_GUIDE_DATA, hostId: 'demo' });
     }
   }, [hostId]);
 
+  if (isSuspended) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+        <span className="material-icons-outlined text-7xl text-amber-500 mb-4 animate-pulse">lock_clock</span>
+        <h1 className="font-serif text-3xl text-primary mb-3">Guia Indisponível</h1>
+        <p className="opacity-70 max-w-sm mb-6">
+          Este guia de boas-vindas está temporariamente suspenso. Por favor, entre em contato com seu anfitrião para obter as informações de acesso.
+        </p>
+      </div>
+    );
+  }
+
   if (!data) return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh]">
-      <h1 className="font-serif text-3xl text-primary">Guia não encontrado</h1>
-      <p className="opacity-70">Verifique o link enviado pelo seu anfitrião.</p>
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+      <span className="material-icons-outlined text-6xl text-primary/20 mb-4">search_off</span>
+      <h1 className="font-serif text-2xl text-primary mb-2">Guia não encontrado</h1>
+      <Link to="/login" className="mt-6 text-primary font-bold underline">Voltar ao Login</Link>
     </div>
   );
 
@@ -112,21 +139,15 @@ const App: React.FC = () => {
   return (
     <HashRouter>
       <Routes>
-        {/* Auth Routes */}
         <Route path="/login" element={<Layout><Login /></Layout>} />
         <Route path="/register" element={<Layout><Register /></Layout>} />
-
-        {/* Guest Portal Route - Dynamic */}
+        <Route path="/super-admin" element={<Layout><SuperAdmin /></Layout>} />
         <Route path="/guide/:hostId/*" element={<Layout isGuest><GuestRouter /></Layout>} />
-
-        {/* Management Route - Protected */}
         <Route path="/admin" element={
           <ProtectedRoute>
             <Layout><AdminWrapper /></Layout>
           </ProtectedRoute>
         } />
-
-        {/* Default Redirect */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </HashRouter>
