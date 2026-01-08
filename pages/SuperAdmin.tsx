@@ -1,50 +1,105 @@
 
 import React, { useState, useEffect } from 'react';
-import { User } from '../types';
+import { User, PaymentRecord } from '../types';
 
 const SuperAdmin: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [masterPassword, setMasterPassword] = useState('');
   const [users, setUsers] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('97.00');
 
+  // Load users whenever authentication state changes or component mounts
   useEffect(() => {
-    if (isAuthenticated) {
+    const loadData = () => {
       const storedUsers = JSON.parse(localStorage.getItem('casa_verde_users') || '[]');
       setUsers(storedUsers);
+    };
+
+    if (isAuthenticated) {
+      loadData();
     }
   }, [isAuthenticated]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (masterPassword === 'admin123') { // Simple hardcoded master password
+    if (masterPassword === 'admin123') {
       setIsAuthenticated(true);
     } else {
       alert('Senha mestra incorreta.');
     }
   };
 
-  const toggleUserStatus = (userId: string) => {
-    const updatedUsers = users.map(u => 
-      u.id === userId ? { ...u, isActive: !u.isActive } : u
-    );
+  const saveUsers = (updatedUsers: User[]) => {
     setUsers(updatedUsers);
     localStorage.setItem('casa_verde_users', JSON.stringify(updatedUsers));
+  };
+
+  const toggleUserStatus = (userId: string) => {
+    const updated = users.map(u => u.id === userId ? { ...u, isActive: !u.isActive } : u);
+    saveUsers(updated);
+  };
+
+  const registerPayment = () => {
+    if (!selectedUser) return;
+    
+    const newPayment: PaymentRecord = {
+      id: Math.random().toString(36).substring(7),
+      date: Date.now(),
+      amount: parseFloat(paymentAmount),
+      status: 'paid',
+      method: 'Pix/Cartão'
+    };
+
+    const updated = users.map(u => {
+      if (u.id === selectedUser.id) {
+        const currentExpiry = u.subscriptionExpiresAt || Date.now();
+        const newExpiry = Math.max(currentExpiry, Date.now()) + (30 * 24 * 60 * 60 * 1000);
+        return {
+          ...u,
+          isActive: true,
+          subscriptionExpiresAt: newExpiry,
+          paymentHistory: [newPayment, ...(u.paymentHistory || [])]
+        };
+      }
+      return u;
+    });
+
+    saveUsers(updated);
+    setShowPaymentModal(false);
+    setSelectedUser(null);
+    alert('Pagamento registrado e licença renovada por 30 dias!');
+  };
+
+  const formatCurrency = (val: number) => 
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  const calculateTotalRevenue = () => {
+    return users.reduce((acc, user) => 
+      acc + (user.paymentHistory?.reduce((sum, p) => sum + p.amount, 0) || 0), 0
+    );
   };
 
   if (!isAuthenticated) {
     return (
       <div className="max-w-md mx-auto pt-20 px-6">
         <div className="bg-white dark:bg-card-dark p-8 rounded-3xl shadow-soft border border-primary/20">
-          <h1 className="font-serif text-2xl text-primary mb-6 text-center">Portal do Licenciador</h1>
+          <h1 className="font-serif text-2xl text-primary mb-6 text-center flex items-center justify-center gap-2">
+            <span className="material-icons-outlined">admin_panel_settings</span>
+            SaaS Control Center
+          </h1>
           <form onSubmit={handleLogin} className="space-y-4">
             <input 
               type="password" 
               placeholder="Senha Mestra"
-              className="w-full rounded-xl border-gray-200"
+              className="w-full rounded-xl border-gray-200 focus:ring-primary focus:border-primary px-4 py-3"
               value={masterPassword}
               onChange={(e) => setMasterPassword(e.target.value)}
             />
-            <button className="w-full bg-primary text-white py-3 rounded-xl font-bold">Acessar Sistema</button>
+            <button className="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform">
+              Entrar no Painel de Controle
+            </button>
           </form>
         </div>
       </div>
@@ -52,78 +107,163 @@ const SuperAdmin: React.FC = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto pt-4 pb-20">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="font-serif text-4xl text-primary">Gestão de Licenças</h1>
-          <p className="opacity-70">Controle o acesso de todos os anfitriões cadastrados.</p>
+    <div className="max-w-7xl mx-auto pt-4 pb-32 px-4 md:px-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white dark:bg-card-dark p-6 rounded-3xl border border-primary/10 shadow-soft">
+          <span className="text-[10px] font-bold text-primary uppercase tracking-widest block mb-1">Clientes Totais</span>
+          <span className="text-3xl font-serif text-primary">{users.length}</span>
         </div>
-        <div className="bg-primary/10 px-6 py-3 rounded-2xl flex items-center gap-4">
-          <div className="text-center">
-            <span className="block text-xs font-bold text-primary uppercase">Total de Clientes</span>
-            <span className="text-2xl font-bold text-primary">{users.length}</span>
-          </div>
-          <div className="h-10 w-[1px] bg-primary/20"></div>
-          <div className="text-center">
-            <span className="block text-xs font-bold text-primary uppercase">Ativos</span>
-            <span className="text-2xl font-bold text-primary">{users.filter(u => u.isActive).length}</span>
-          </div>
+        <div className="bg-white dark:bg-card-dark p-6 rounded-3xl border border-primary/10 shadow-soft">
+          <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest block mb-1">Licenças Ativas</span>
+          <span className="text-3xl font-serif text-green-600">{users.filter(u => u.isActive).length}</span>
+        </div>
+        <div className="bg-white dark:bg-card-dark p-6 rounded-3xl border border-primary/10 shadow-soft">
+          <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest block mb-1">Acessos Suspensos</span>
+          <span className="text-3xl font-serif text-red-600">{users.filter(u => !u.isActive).length}</span>
+        </div>
+        <div className="bg-primary text-white p-6 rounded-3xl shadow-lg">
+          <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest block mb-1">Faturamento Total</span>
+          <span className="text-3xl font-serif">{formatCurrency(calculateTotalRevenue())}</span>
         </div>
       </div>
 
       <div className="bg-white dark:bg-card-dark rounded-3xl shadow-soft overflow-hidden border border-primary/10">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-primary/5 text-primary text-xs font-bold uppercase tracking-widest">
-                <th className="p-4 border-b border-primary/10">Propriedade / Gestor</th>
-                <th className="p-4 border-b border-primary/10">ID / Link</th>
-                <th className="p-4 border-b border-primary/10">Status Licença</th>
-                <th className="p-4 border-b border-primary/10 text-right">Ação</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-primary/5">
-              {users.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="p-20 text-center opacity-40">Nenhum gestor cadastrado no momento.</td>
+        <div className="overflow-x-auto min-h-[300px]">
+          {users.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-20 text-center">
+              <span className="material-icons-outlined text-5xl text-primary/20 mb-4">group_off</span>
+              <p className="text-primary font-serif text-xl">Nenhum cliente cadastrado ainda.</p>
+              <p className="text-xs opacity-50 mt-1 uppercase tracking-widest">Os novos registros aparecerão aqui automaticamente</p>
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-primary/5 text-primary text-[10px] font-bold uppercase tracking-widest">
+                  <th className="p-5 border-b border-primary/10">Gestor & Propriedade</th>
+                  <th className="p-5 border-b border-primary/10">Expiração</th>
+                  <th className="p-5 border-b border-primary/10">Status</th>
+                  <th className="p-5 border-b border-primary/10">Histórico</th>
+                  <th className="p-5 border-b border-primary/10 text-right">Ações</th>
                 </tr>
-              ) : (
-                users.map(u => (
+              </thead>
+              <tbody className="divide-y divide-primary/5">
+                {users.map(u => (
                   <tr key={u.id} className="hover:bg-primary/5 transition-colors">
-                    <td className="p-4">
+                    <td className="p-5">
                       <div className="font-bold text-primary">{u.propertyName}</div>
-                      <div className="text-xs opacity-60">{u.ownerName} • {u.email}</div>
+                      <div className="text-xs opacity-60 font-medium">{u.ownerName} • {u.email}</div>
                     </td>
-                    <td className="p-4">
-                      <div className="font-mono text-xs">{u.id}</div>
-                      <a 
-                        href={`${window.location.origin}${window.location.pathname}#/guide/${u.id}`} 
-                        target="_blank" 
-                        className="text-[10px] text-primary underline"
-                      >
-                        Abrir Link do Hóspede
-                      </a>
+                    <td className="p-5">
+                      <div className="text-sm font-bold text-text-dark dark:text-text-light">
+                        {u.subscriptionExpiresAt 
+                          ? new Date(u.subscriptionExpiresAt).toLocaleDateString()
+                          : 'Período Trial'}
+                      </div>
+                      {u.subscriptionExpiresAt && (
+                        <div className={`text-[10px] font-bold uppercase mt-1 ${
+                          (u.subscriptionExpiresAt - Date.now()) < 0 ? 'text-red-500' : 'text-primary/60'
+                        }`}>
+                          {Math.ceil((u.subscriptionExpiresAt - Date.now()) / (1000 * 60 * 60 * 24))} dias restantes
+                        </div>
+                      )}
                     </td>
-                    <td className="p-4">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${u.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {u.isActive ? 'Ativo (Pago)' : 'Inativo (Suspenso)'}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right">
+                    <td className="p-5">
                       <button 
                         onClick={() => toggleUserStatus(u.id)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${u.isActive ? 'border border-red-200 text-red-600 hover:bg-red-50' : 'bg-primary text-white shadow-md'}`}
+                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase transition-all shadow-sm ${
+                          u.isActive 
+                            ? 'bg-green-100 text-green-700 hover:bg-red-50 hover:text-red-600' 
+                            : 'bg-red-100 text-red-700 hover:bg-green-50 hover:text-green-600'
+                        }`}
                       >
-                        {u.isActive ? 'Suspender' : 'Reativar'}
+                        {u.isActive ? 'Ativo' : 'Suspenso'}
+                      </button>
+                    </td>
+                    <td className="p-5">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex -space-x-2">
+                          {u.paymentHistory && u.paymentHistory.length > 0 ? (
+                            u.paymentHistory.slice(0, 4).map(p => (
+                              <div 
+                                key={p.id} 
+                                className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-[10px] border-2 border-white shadow-sm font-bold" 
+                                title={`${formatCurrency(p.amount)} em ${new Date(p.date).toLocaleDateString()}`}
+                              >
+                                $
+                              </div>
+                            ))
+                          ) : (
+                            <span className="text-[10px] italic opacity-40">Sem faturas</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-5 text-right">
+                      <button 
+                        onClick={() => { setSelectedUser(u); setShowPaymentModal(true); }}
+                        className="bg-primary text-white px-4 py-2 rounded-xl text-[10px] font-bold shadow-md hover:bg-primary-light active:scale-95 transition-all"
+                      >
+                        Registrar Pix
                       </button>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-card-dark w-full max-w-md rounded-3xl p-8 shadow-2xl border border-primary/20 animate-in fade-in zoom-in duration-200">
+            <h2 className="font-serif text-2xl text-primary mb-2">Registrar Assinatura</h2>
+            <p className="text-sm opacity-70 mb-6 font-medium">Você está renovando a licença de <b>{selectedUser.propertyName}</b> por mais 30 dias.</p>
+            
+            <div className="space-y-4 mb-8">
+              <div>
+                <label className="block text-xs font-bold text-primary uppercase mb-1 px-1 tracking-widest">Valor Recebido (R$)</label>
+                <input 
+                  type="text" 
+                  className="w-full rounded-xl border-gray-100 bg-background-light p-4 font-mono text-xl text-primary focus:ring-2 focus:ring-primary/20 border-2"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                />
+              </div>
+              <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                <div className="flex justify-between text-xs mb-2">
+                  <span className="opacity-60">Expiração Atual:</span>
+                  <span className="font-bold text-primary">
+                    {selectedUser.subscriptionExpiresAt ? new Date(selectedUser.subscriptionExpiresAt).toLocaleDateString() : 'Trial / Imediata'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs text-primary pt-2 border-t border-primary/10">
+                  <span className="font-bold">Nova Expiração:</span>
+                  <span className="font-black underline text-sm">
+                    {new Date(Math.max(selectedUser.subscriptionExpiresAt || Date.now(), Date.now()) + (30 * 24 * 60 * 60 * 1000)).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowPaymentModal(false)}
+                className="flex-1 border-2 border-gray-100 py-4 rounded-xl font-bold text-sm text-gray-400 hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={registerPayment}
+                className="flex-1 bg-primary text-white py-4 rounded-xl font-bold text-sm shadow-xl hover:bg-primary-light transition-all active:scale-95"
+              >
+                Confirmar Pagamento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

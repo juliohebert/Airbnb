@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { GuideData } from '../types';
 
 interface ManagementProps {
@@ -10,6 +11,7 @@ interface ManagementProps {
 const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
   const [formData, setFormData] = useState<GuideData>(data);
   const [activeTab, setActiveTab] = useState<'property' | 'host' | 'wifi' | 'rules'>('property');
+  const navigate = useNavigate();
   const guestLink = `${window.location.origin}${window.location.pathname}#/guide/${data.hostId}`;
 
   const handleSave = () => {
@@ -35,7 +37,7 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto pt-2 pb-24">
+    <div className="max-w-4xl mx-auto pt-2 pb-24 relative">
       {/* Header Admin - Share Section Optimized for Mobile */}
       <div className="bg-primary/5 dark:bg-primary/10 p-5 md:p-6 rounded-3xl mb-8 border-2 border-primary/20">
         <h2 className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-widest mb-3">Link Exclusivo do Hóspede</h2>
