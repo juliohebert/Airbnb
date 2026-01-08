@@ -26,7 +26,9 @@ const Register: React.FC = () => {
       email: formData.email,
       password: formData.password,
       propertyName: formData.propertyName,
-      ownerName: formData.ownerName
+      ownerName: formData.ownerName,
+      isActive: true, // Defaulting to active on registration
+      createdAt: Date.now()
     };
 
     localStorage.setItem('casa_verde_users', JSON.stringify([...users, newUser]));

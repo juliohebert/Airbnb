@@ -4,6 +4,9 @@ export interface User {
   email: string;
   password?: string;
   propertyName: string;
+  ownerName: string;
+  isActive: boolean; // Field to control license
+  createdAt: number;
 }
 
 export interface HostInfo {
