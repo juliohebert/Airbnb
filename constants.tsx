@@ -1,7 +1,9 @@
 
 import { GuideData } from './types';
 
+// Fix: Added missing hostId property to satisfy GuideData interface requirements
 export const INITIAL_GUIDE_DATA: GuideData = {
+  hostId: "initial-host",
   host: {
     names: "Elena & Marco",
     photoUrl: "https://picsum.photos/id/64/300/300",

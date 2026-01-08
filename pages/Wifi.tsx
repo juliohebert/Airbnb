@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { GuideData } from '../types';
 
 const Wifi: React.FC<{ data: GuideData }> = ({ data }) => {
   const navigate = useNavigate();
+  const { hostId } = useParams();
 
   return (
     <div className="max-w-4xl mx-auto px-6 pt-8 pb-20 flex flex-col items-center">
@@ -31,7 +32,6 @@ const Wifi: React.FC<{ data: GuideData }> = ({ data }) => {
           <div className="flex flex-col items-center pt-6 border-t border-primary/10">
             <p className="text-sm font-sans text-primary/60 mb-6 font-medium">ESCANEIE PARA CONECTAR</p>
             <div className="p-4 bg-white rounded-xl shadow-md">
-              {/* Mock QR code svg */}
               <svg className="w-48 h-48 text-primary" viewBox="0 0 100 100" fill="currentColor">
                 <rect x="10" y="10" width="20" height="20" />
                 <rect x="70" y="10" width="20" height="20" />
@@ -47,7 +47,7 @@ const Wifi: React.FC<{ data: GuideData }> = ({ data }) => {
       </div>
 
       <div className="mt-8">
-        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-primary hover:text-primary-dark font-medium transition-all bg-card-light dark:bg-card-dark px-8 py-3 rounded-full shadow-sm">
+        <button onClick={() => navigate(`/guide/${hostId}`)} className="inline-flex items-center gap-2 text-primary hover:text-primary-dark font-medium transition-all bg-card-light dark:bg-card-dark px-8 py-3 rounded-full shadow-sm">
           <span className="material-icons-outlined">arrow_back</span>
           Voltar ao Início
         </button>

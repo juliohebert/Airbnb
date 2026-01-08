@@ -1,20 +1,23 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { GuideData } from '../types';
 
 interface HomeProps {
   data: GuideData;
 }
 
-const MenuCard: React.FC<{ to: string, icon: string, title: string }> = ({ to, icon, title }) => (
-  <Link to={to} className="group relative flex flex-col items-center text-center">
-    <div className="w-full bg-card-light dark:bg-card-dark h-52 rounded-t-xl rounded-b-[3rem] shadow-soft flex flex-col items-center justify-center p-6 transition-all duration-300 transform group-hover:-translate-y-2 group-hover:bg-primary/10 dark:group-hover:bg-primary/20 border-t-4 border-primary/20">
-      <span className="material-icons-outlined text-6xl text-primary mb-3 group-hover:scale-110 transition-transform">{icon}</span>
-      <h3 className="font-serif text-xl text-primary dark:text-primary-light uppercase tracking-wide leading-tight" dangerouslySetInnerHTML={{ __html: title }}></h3>
-    </div>
-  </Link>
-);
+const MenuCard: React.FC<{ to: string, icon: string, title: string }> = ({ to, icon, title }) => {
+  const { hostId } = useParams();
+  return (
+    <Link to={`/guide/${hostId}${to}`} className="group relative flex flex-col items-center text-center">
+      <div className="w-full bg-card-light dark:bg-card-dark h-52 rounded-t-xl rounded-b-[3rem] shadow-soft flex flex-col items-center justify-center p-6 transition-all duration-300 transform group-hover:-translate-y-2 group-hover:bg-primary/10 dark:group-hover:bg-primary/20 border-t-4 border-primary/20">
+        <span className="material-icons-outlined text-6xl text-primary mb-3 group-hover:scale-110 transition-transform">{icon}</span>
+        <h3 className="font-serif text-xl text-primary dark:text-primary-light uppercase tracking-wide leading-tight" dangerouslySetInnerHTML={{ __html: title }}></h3>
+      </div>
+    </Link>
+  );
+};
 
 const Home: React.FC<HomeProps> = ({ data }) => {
   return (
@@ -25,7 +28,7 @@ const Home: React.FC<HomeProps> = ({ data }) => {
           <div className="absolute inset-0 border-[6px] border-card-light dark:border-card-dark rounded-full"></div>
         </div>
         <h1 className="font-script text-6xl md:text-7xl text-primary mb-2 leaf-animate drop-shadow-sm">Bem-vindo!</h1>
-        <p className="font-script text-4xl text-primary/80 mb-6">- Boas-Vindas -</p>
+        <p className="font-script text-4xl text-primary/80 mb-6">- {data.property.name} -</p>
         <div className="inline-block bg-primary text-white px-8 py-3 rounded-full shadow-lg">
           <p className="font-sans text-sm md:text-base font-medium tracking-wide">
             Preparamos este guia para tornar a sua estadia mais confortável e tranquila.

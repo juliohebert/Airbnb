@@ -1,4 +1,11 @@
 
+export interface User {
+  id: string;
+  email: string;
+  password?: string;
+  propertyName: string;
+}
+
 export interface HostInfo {
   names: string;
   photoUrl: string;
@@ -56,6 +63,7 @@ export interface CheckOutStep {
 }
 
 export interface GuideData {
+  hostId: string;
   host: HostInfo;
   property: PropertyInfo;
   wifi: WifiInfo;
