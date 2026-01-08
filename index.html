@@ -1,0 +1,67 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casa Verde - Guia de Boas-Vindas</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=DM+Serif+Display&family=Nunito+Sans:wght@300;400;600;700&family=Material+Icons+Outlined&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#4A6741",
+                        "primary-light": "#6B8E61",
+                        "background-light": "#FDFCF5",
+                        "background-dark": "#1A1D1A",
+                        "card-light": "#E9EED9",
+                        "card-dark": "#2C332B",
+                        "text-dark": "#2D3B2A",
+                        "text-light": "#F0F2EB"
+                    },
+                    fontFamily: {
+                        script: ["'Dancing Script'", "cursive"],
+                        serif: ["'DM Serif Display'", "serif"],
+                        sans: ["'Nunito Sans'", "sans-serif"],
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(74, 103, 65, 0.15)',
+                    }
+                },
+            },
+        };
+    </script>
+    <style>
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        .leaf-animate {
+            animation: float 6s ease-in-out infinite;
+        }
+        .selection-olive::selection {
+            background-color: #4A6741;
+            color: white;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3"
+  }
+}
+</script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-dark dark:text-text-light selection-olive">
+    <div id="root"></div>
+</body>
+</html>
