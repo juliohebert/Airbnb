@@ -56,35 +56,13 @@ const SuperAdmin: React.FC = () => {
     }
   };
 
-  const registerPayment = () => {
+  const registerPayment = async () => {
     if (!selectedUser) return;
     
-    const newPayment: PaymentRecord = {
-      id: Math.random().toString(36).substring(7),
-      date: Date.now(),
-      amount: parseFloat(paymentAmount),
-      status: 'paid',
-      method: 'Pix/Cartão'
-    };
-
-    const updated = users.map(u => {
-      if (u.id === selectedUser.id) {
-        const currentExpiry = u.subscriptionExpiresAt || Date.now();
-        const newExpiry = Math.max(currentExpiry, Date.now()) + (30 * 24 * 60 * 60 * 1000);
-        return {
-          ...u,
-          isActive: true,
-          subscriptionExpiresAt: newExpiry,
-          paymentHistory: [newPayment, ...(u.paymentHistory || [])]
-        };
-      }
-      return u;
-    });
-
-    saveUsers(updated);
+    // TODO: Implementar endpoint de pagamento no backend
+    alert('Funcionalidade de pagamento será implementada em breve. Por enquanto, use o botão de Ativar/Suspender para gerenciar o acesso dos usuários.');
     setShowPaymentModal(false);
     setSelectedUser(null);
-    alert('Pagamento registrado e licença renovada por 30 dias!');
   };
 
   const formatCurrency = (val: number) => 
