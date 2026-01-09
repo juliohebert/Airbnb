@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, PaymentRecord } from '../types';
 import { api } from '../api';
 
 const SuperAdmin: React.FC = () => {
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [masterPassword, setMasterPassword] = useState('');
   const [users, setUsers] = useState<User[]>([]);
@@ -12,6 +14,15 @@ const SuperAdmin: React.FC = () => {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('97.00');
   const [loading, setLoading] = useState(false);
+
+  // Verificar token JWT ao montar o componente
+  useEffect(() => {
+    const token = localStorage.getItem('casa_verde_token');
+    if (!token) {
+      alert('É necessário fazer login primeiro com sua conta de super admin.');
+      navigate('/login');
+    }
+  }, [navigate]);
 
   // Load users whenever authentication state changes or component mounts
   useEffect(() => {
@@ -25,9 +36,19 @@ const SuperAdmin: React.FC = () => {
       setLoading(true);
       const loadedUsers = await api.getUsers();
       setUsers(loadedUsers);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar usuários:', error);
-      alert('Erro ao carregar usuários');
+      
+      // Se der erro de autenticação, redirecionar para login
+      if (error.message?.includes('Token') || error.message?.includes('401')) {
+        alert('Sessão expirada. Faça login novamente com sua conta de super admin.');
+        localStorage.removeItem('casa_verde_token');
+        localStorage.removeItem('casa_verde_user');
+        navigate('/login');
+        return;
+      }
+      
+      alert('Erro ao carregar usuários: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -35,6 +56,15 @@ const SuperAdmin: React.FC = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Verificar novamente se tem token JWT
+    const token = localStorage.getItem('casa_verde_token');
+    if (!token) {
+      alert('É necessário fazer login primeiro com sua conta de super admin (julio@email.com ou silva@email.com).');
+      navigate('/login');
+      return;
+    }
+    
     if (masterPassword === 'admin123') {
       setIsAuthenticated(true);
     } else {
