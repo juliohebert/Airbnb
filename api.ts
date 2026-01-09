@@ -3,6 +3,9 @@ const API_URL = import.meta.env.VITE_API_URL ||
     ? 'https://casa-verde-api.onrender.com' 
     : 'http://localhost:3001');
 
+console.log('🔧 API_URL:', API_URL);
+console.log('🔧 MODE:', import.meta.env.MODE);
+
 export const api = {
   async request(endpoint, options = {}) {
     const token = localStorage.getItem('casa_verde_token');
