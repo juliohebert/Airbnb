@@ -16,6 +16,7 @@ import Management from './pages/Management';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import SuperAdmin from './pages/SuperAdmin';
+import Promote from './pages/Promote';
 
 const Layout: React.FC<{ children: React.ReactNode, isGuest?: boolean }> = ({ children, isGuest }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -143,6 +144,7 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/login" element={<Layout><Login /></Layout>} />
         <Route path="/register" element={<Layout><Register /></Layout>} />
+        <Route path="/promote" element={<Layout><Promote /></Layout>} />
         <Route path="/super-admin" element={<Layout><SuperAdmin /></Layout>} />
         <Route path="/guide/:hostId/*" element={<Layout isGuest><GuestRouter /></Layout>} />
         <Route path="/admin" element={

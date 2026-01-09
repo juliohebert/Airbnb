@@ -314,6 +314,22 @@ app.patch('/api/admin/users/:userId', authenticate, async (req, res) => {
   }
 });
 
+// Rota temporária para promover usuário a super admin (REMOVER EM PRODUÇÃO)
+app.post('/api/admin/promote', authenticate, async (req, res) => {
+  try {
+    // Promove o usuário atual a super admin
+    await query(
+      'UPDATE users SET is_super_admin = true WHERE id = $1',
+      [req.user.id]
+    );
+    
+    res.json({ success: true, message: 'Usuário promovido a Super Admin' });
+  } catch (error) {
+    console.error('Erro ao promover usuário:', error);
+    res.status(500).json({ error: 'Erro ao promover usuário' });
+  }
+});
+
 // Iniciar servidor
 async function startServer() {
   await runMigrations();

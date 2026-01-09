@@ -96,4 +96,11 @@ export const api = {
       body: JSON.stringify({ isActive }),
     });
   },
+
+  // Promover usuário atual a super admin
+  async promoteToSuperAdmin() {
+    return this.request('/api/admin/promote', {
+      method: 'POST',
+    });
+  },
 };
