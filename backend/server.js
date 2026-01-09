@@ -210,6 +210,44 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// Login exclusivo para super admin
+app.post('/api/superadmin/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email e senha são obrigatórios.' });
+    }
+    const result = await query('SELECT * FROM users WHERE email = $1', [email]);
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Usuário não encontrado.' });
+    }
+    const user = result.rows[0];
+    if (!user.is_super_admin) {
+      return res.status(403).json({ error: 'Acesso restrito a super administradores.' });
+    }
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      return res.status(401).json({ error: 'Senha incorreta.' });
+    }
+    // Gera token JWT
+    const token = jwt.sign({ userId: user.id, is_super_admin: true }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        isSuperAdmin: user.is_super_admin,
+        isActive: user.is_active,
+        propertyName: user.property_name,
+        ownerName: user.owner_name
+      }
+    });
+  } catch (error) {
+    console.error('Erro no login superadmin:', error);
+    res.status(500).json({ error: 'Erro ao autenticar super admin.' });
+  }
+});
+
 // Obter guias do usuário
 app.get('/api/guides', authenticate, async (req, res) => {
   try {

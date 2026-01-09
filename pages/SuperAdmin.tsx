@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, PaymentRecord } from '../types';
@@ -14,6 +13,11 @@ const SuperAdmin: React.FC = () => {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('97.00');
   const [loading, setLoading] = useState(false);
+
+  // Novo login direto de super admin
+  const [superAdminEmail, setSuperAdminEmail] = useState('');
+  const [superAdminPassword, setSuperAdminPassword] = useState('');
+  const [superAdminError, setSuperAdminError] = useState('');
 
   // Verificar token JWT ao montar o componente
   useEffect(() => {
@@ -72,6 +76,20 @@ const SuperAdmin: React.FC = () => {
     }
   };
 
+  const handleSuperAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuperAdminError('');
+    setLoading(true);
+    try {
+      await api.superAdminLogin(superAdminEmail, superAdminPassword);
+      setIsAuthenticated(true);
+    } catch (err: any) {
+      setSuperAdminError(err.message || 'Erro ao autenticar super admin');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const toggleUserStatus = async (userId: string) => {
     try {
       const user = users.find(u => u.id === userId);
@@ -121,18 +139,43 @@ const SuperAdmin: React.FC = () => {
   if (!isAuthenticated) {
     return (
       <div className="max-w-md mx-auto pt-20 px-6">
-        <div className="bg-white dark:bg-card-dark p-8 rounded-3xl shadow-soft border border-primary/20">
+        <div className="bg-white dark:bg-card-dark p-8 rounded-3xl shadow-soft border border-primary/20 mb-8">
           <h1 className="font-serif text-2xl text-primary mb-6 text-center flex items-center justify-center gap-2">
             <span className="material-icons-outlined">admin_panel_settings</span>
-            SaaS Control Center
+            Login Super Admin
           </h1>
+          <form onSubmit={handleSuperAdminLogin} className="space-y-4">
+            <input
+              type="email"
+              placeholder="E-mail do Super Admin"
+              className="w-full rounded-xl border-gray-200 focus:ring-primary focus:border-primary px-4 py-3"
+              value={superAdminEmail}
+              onChange={e => setSuperAdminEmail(e.target.value)}
+              required
+            />
+            <input
+              type="password"
+              placeholder="Senha do Super Admin"
+              className="w-full rounded-xl border-gray-200 focus:ring-primary focus:border-primary px-4 py-3"
+              value={superAdminPassword}
+              onChange={e => setSuperAdminPassword(e.target.value)}
+              required
+            />
+            <button className="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform" disabled={loading}>
+              {loading ? 'Entrando...' : 'Entrar como Super Admin'}
+            </button>
+            {superAdminError && <div className="text-red-600 text-xs mt-2">{superAdminError}</div>}
+          </form>
+        </div>
+        <div className="bg-white dark:bg-card-dark p-8 rounded-3xl shadow-soft border border-primary/20">
+          <h2 className="font-serif text-lg text-primary mb-4 text-center">Acesso alternativo (senha mestra)</h2>
           <form onSubmit={handleLogin} className="space-y-4">
-            <input 
-              type="password" 
+            <input
+              type="password"
               placeholder="Senha Mestra"
               className="w-full rounded-xl border-gray-200 focus:ring-primary focus:border-primary px-4 py-3"
               value={masterPassword}
-              onChange={(e) => setMasterPassword(e.target.value)}
+              onChange={e => setMasterPassword(e.target.value)}
             />
             <button className="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform">
               Entrar no Painel de Controle

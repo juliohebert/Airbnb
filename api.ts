@@ -114,4 +114,22 @@ export const api = {
       method: 'POST',
     });
   },
+
+  // Super Admin Login
+  async superAdminLogin(email, password) {
+    const response = await fetch(`${API_URL}/api/superadmin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Erro no login do super admin');
+    }
+    if (data.token) {
+      localStorage.setItem('casa_verde_token', data.token);
+      localStorage.setItem('casa_verde_user', JSON.stringify(data.user));
+    }
+    return data;
+  },
 };
