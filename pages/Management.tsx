@@ -15,7 +15,7 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
   const [loading, setLoading] = useState(true);
   
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'property' | 'host' | 'wifi' | 'checkin' | 'rules'>('property');
+  const [activeTab, setActiveTab] = useState<'property' | 'host' | 'wifi' | 'checkin' | 'amenities' | 'rules'>('property');
   const [formData, setFormData] = useState<GuideData | null>(null);
   const [isNewProperty, setIsNewProperty] = useState(false);
 
@@ -247,6 +247,7 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
           { id: 'host', label: 'Anfitrião', icon: 'person' },
           { id: 'wifi', label: 'Wi-Fi', icon: 'wifi' },
           { id: 'checkin', label: 'Check-in/out', icon: 'vpn_key' },
+          { id: 'amenities', label: 'Comodidades', icon: 'apartment' },
           { id: 'rules', label: 'Regras', icon: 'fact_check' }
         ].map(tab => (
           <button 
@@ -498,6 +499,118 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'amenities' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-primary text-sm">Comodidades e Extras</h3>
+              <button 
+                onClick={() => {
+                  if (formData) {
+                    const newAmenity = { id: Date.now().toString(), category: '', icon: 'star', items: [''] };
+                    setFormData({ ...formData, amenities: [...formData.amenities, newAmenity] });
+                  }
+                }}
+                className="bg-primary text-white px-3 py-2 rounded-lg flex items-center gap-1 text-xs"
+              >
+                <span className="material-icons-outlined text-sm">add</span>
+                Nova Categoria
+              </button>
+            </div>
+            <div className="space-y-4">
+              {formData.amenities.map((amenity, amenityIdx) => (
+                <div key={amenity.id} className="bg-background-light/40 dark:bg-black/10 p-4 rounded-2xl border border-primary/10">
+                  <div className="flex gap-3 mb-3">
+                    <input 
+                      type="text"
+                      placeholder="Nome da categoria (ex: Cozinha)"
+                      className="flex-grow rounded-lg border-gray-100 bg-white dark:bg-black/20 text-sm p-2 font-bold"
+                      value={amenity.category}
+                      onChange={(e) => {
+                        if (formData) {
+                          const newAmenities = [...formData.amenities];
+                          newAmenities[amenityIdx].category = e.target.value;
+                          setFormData({ ...formData, amenities: newAmenities });
+                        }
+                      }}
+                    />
+                    <input 
+                      type="text"
+                      placeholder="Ícone"
+                      className="w-24 rounded-lg border-gray-100 bg-white dark:bg-black/20 text-sm p-2 text-center"
+                      value={amenity.icon}
+                      onChange={(e) => {
+                        if (formData) {
+                          const newAmenities = [...formData.amenities];
+                          newAmenities[amenityIdx].icon = e.target.value;
+                          setFormData({ ...formData, amenities: newAmenities });
+                        }
+                      }}
+                    />
+                    <button 
+                      className="text-red-400 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                      onClick={() => {
+                        if (formData) {
+                          setFormData({ ...formData, amenities: formData.amenities.filter(a => a.id !== amenity.id) });
+                        }
+                      }}
+                    >
+                      <span className="material-icons-outlined text-lg">delete</span>
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-2 pl-3 border-l-2 border-primary/20">
+                    {amenity.items.map((item, itemIdx) => (
+                      <div key={itemIdx} className="flex gap-2">
+                        <input 
+                          type="text"
+                          placeholder="Item da categoria (ex: Geladeira)"
+                          className="flex-grow rounded-lg border-gray-100 bg-white dark:bg-black/20 text-sm p-2"
+                          value={item}
+                          onChange={(e) => {
+                            if (formData) {
+                              const newAmenities = [...formData.amenities];
+                              newAmenities[amenityIdx].items[itemIdx] = e.target.value;
+                              setFormData({ ...formData, amenities: newAmenities });
+                            }
+                          }}
+                        />
+                        <button 
+                          className="text-red-300 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                          onClick={() => {
+                            if (formData) {
+                              const newAmenities = [...formData.amenities];
+                              newAmenities[amenityIdx].items = newAmenities[amenityIdx].items.filter((_, i) => i !== itemIdx);
+                              setFormData({ ...formData, amenities: newAmenities });
+                            }
+                          }}
+                        >
+                          <span className="material-icons-outlined text-base">close</span>
+                        </button>
+                      </div>
+                    ))}
+                    <button 
+                      onClick={() => {
+                        if (formData) {
+                          const newAmenities = [...formData.amenities];
+                          newAmenities[amenityIdx].items.push('');
+                          setFormData({ ...formData, amenities: newAmenities });
+                        }
+                      }}
+                      className="text-primary text-xs flex items-center gap-1 hover:bg-primary/5 px-2 py-1 rounded-lg"
+                    >
+                      <span className="material-icons-outlined text-sm">add</span>
+                      Adicionar item
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="text-xs text-gray-500 mt-4 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg">
+              <strong>💡 Dica:</strong> Use ícones do Material Icons como: kitchen, bed, tv, local_laundry_service, ac_unit, pool, etc.
             </div>
           </div>
         )}
