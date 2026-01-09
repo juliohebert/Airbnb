@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { User, PaymentRecord } from '../types';
+import { api } from '../api';
 
 const SuperAdmin: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -10,18 +11,27 @@ const SuperAdmin: React.FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('97.00');
+  const [loading, setLoading] = useState(false);
 
   // Load users whenever authentication state changes or component mounts
   useEffect(() => {
-    const loadData = () => {
-      const storedUsers = JSON.parse(localStorage.getItem('casa_verde_users') || '[]');
-      setUsers(storedUsers);
-    };
-
     if (isAuthenticated) {
-      loadData();
+      loadUsers();
     }
   }, [isAuthenticated]);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const loadedUsers = await api.getUsers();
+      setUsers(loadedUsers);
+    } catch (error) {
+      console.error('Erro ao carregar usuários:', error);
+      alert('Erro ao carregar usuários');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,14 +42,18 @@ const SuperAdmin: React.FC = () => {
     }
   };
 
-  const saveUsers = (updatedUsers: User[]) => {
-    setUsers(updatedUsers);
-    localStorage.setItem('casa_verde_users', JSON.stringify(updatedUsers));
-  };
-
-  const toggleUserStatus = (userId: string) => {
-    const updated = users.map(u => u.id === userId ? { ...u, isActive: !u.isActive } : u);
-    saveUsers(updated);
+  const toggleUserStatus = async (userId: string) => {
+    try {
+      const user = users.find(u => u.id === userId);
+      if (!user) return;
+      
+      await api.updateUserStatus(userId, !user.isActive);
+      await loadUsers(); // Recarregar lista
+      alert('Status atualizado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      alert('Erro ao atualizar status');
+    }
   };
 
   const registerPayment = () => {
