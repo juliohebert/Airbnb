@@ -298,17 +298,21 @@ app.delete('/api/guides/:propertyId', authenticate, async (req, res) => {
   }
 });
 
-// Super Admin - Listar todos os usuários
+// Super Admin - Listar todos os usuários com conversão snake_case para camelCase
 app.get('/api/admin/users', authenticate, async (req, res) => {
   try {
     if (!req.user.is_super_admin) {
       return res.status(403).json({ error: 'Acesso negado' });
     }
     
+    console.log('[ADMIN USERS] Buscando lista de usuários - versão camelCase ativa');
+    
     // Buscar usuários
     const usersResult = await query(
       'SELECT id, email, property_name, owner_name, is_active, created_at, subscription_expires_at FROM users ORDER BY created_date DESC'
     );
+    
+    console.log(`[ADMIN USERS] Encontrados ${usersResult.rows.length} usuários`);
     
     // Buscar histórico de pagamentos para cada usuário
     const users = await Promise.all(usersResult.rows.map(async (user) => {
@@ -317,18 +321,22 @@ app.get('/api/admin/users', authenticate, async (req, res) => {
         [user.id]
       );
       
-      return {
+      // IMPORTANTE: Converter snake_case do banco para camelCase do frontend
+      const userData = {
         id: user.id,
         email: user.email,
         propertyName: user.property_name,
         ownerName: user.owner_name,
-        isActive: user.is_active,
+        isActive: user.is_active, // Conversão crítica: is_active -> isActive
         createdAt: user.created_at,
         subscriptionExpiresAt: user.subscription_expires_at,
         paymentHistory: paymentsResult.rows
       };
+      
+      return userData;
     }));
     
+    console.log(`[ADMIN USERS] Retornando ${users.length} usuários com campos camelCase`);
     res.json(users);
   } catch (error) {
     console.error('Erro ao buscar usuários:', error);
