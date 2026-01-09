@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Link, useNavigate, useLocation, useParams, Navigate } from 'react-router-dom';
 import { GuideData, User } from './types';
 import { INITIAL_GUIDE_DATA, DecorativeLeaf } from './constants';
+import { api } from './api';
 import Home from './pages/Home';
 import Wifi from './pages/Wifi';
 import Contact from './pages/Contact';
@@ -82,26 +83,40 @@ const GuestRouter: React.FC = () => {
   const { hostId } = useParams(); // Now this acts as the unique property ID
   const [data, setData] = useState<GuideData | null>(null);
   const [isSuspended, setIsSuspended] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const allUsers: User[] = JSON.parse(localStorage.getItem('casa_verde_users') || '[]');
-    const allGuides: { [key: string]: GuideData } = JSON.parse(localStorage.getItem('casa_verde_all_guides') || '{}');
-    
-    // Find the guide data for this specific property ID
-    const guide = allGuides[hostId || ''];
-    
-    if (guide) {
-      // Check if the owner of this property is active
-      const owner = allUsers.find(u => u.id === guide.hostId);
-      if (owner && !owner.isActive) {
-        setIsSuspended(true);
-        return;
+    const loadGuide = async () => {
+      try {
+        setLoading(true);
+        
+        if (hostId === 'demo') {
+          setData({ ...INITIAL_GUIDE_DATA, hostId: 'demo', propertyId: 'demo' });
+          setLoading(false);
+          return;
+        }
+
+        // Buscar guia da API usando o propertyId
+        const guide = await api.getGuide(hostId || '');
+        setData(guide);
+        setLoading(false);
+      } catch (error) {
+        console.error('Erro ao carregar guia:', error);
+        setLoading(false);
       }
-      setData(guide);
-    } else if (hostId === 'demo') {
-      setData({ ...INITIAL_GUIDE_DATA, hostId: 'demo', propertyId: 'demo' });
-    }
+    };
+
+    loadGuide();
   }, [hostId]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <span className="material-icons-outlined text-6xl text-primary animate-spin mb-4">refresh</span>
+        <p className="text-primary font-bold">Carregando guia...</p>
+      </div>
+    );
+  }
 
   if (isSuspended) {
     return (
