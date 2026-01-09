@@ -15,7 +15,7 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
   const [loading, setLoading] = useState(true);
   
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'property' | 'host' | 'wifi' | 'rules'>('property');
+  const [activeTab, setActiveTab] = useState<'property' | 'host' | 'wifi' | 'checkin' | 'rules'>('property');
   const [formData, setFormData] = useState<GuideData | null>(null);
   const [isNewProperty, setIsNewProperty] = useState(false);
 
@@ -115,6 +115,14 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
 
   const updateWifi = (field: string, value: string) => {
     if (formData) setFormData({ ...formData, wifi: { ...formData.wifi, [field]: value } });
+  };
+
+  const updateCheckIn = (field: string, value: string) => {
+    if (formData) setFormData({ ...formData, checkIn: { ...formData.checkIn, [field]: value } });
+  };
+
+  const updateCheckOut = (field: string, value: string) => {
+    if (formData) setFormData({ ...formData, checkOut: { ...formData.checkOut, [field]: value } });
   };
 
   // Dashboard View (List of Properties)
@@ -238,6 +246,7 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
           { id: 'property', label: 'Local', icon: 'cottage' },
           { id: 'host', label: 'Anfitrião', icon: 'person' },
           { id: 'wifi', label: 'Wi-Fi', icon: 'wifi' },
+          { id: 'checkin', label: 'Check-in/out', icon: 'vpn_key' },
           { id: 'rules', label: 'Regras', icon: 'fact_check' }
         ].map(tab => (
           <button 
@@ -293,6 +302,202 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
             <div>
               <label className="block text-[10px] font-bold text-primary uppercase mb-1 px-1">Senha</label>
               <input type="text" className="w-full rounded-xl border-gray-100 bg-background-light/50 dark:bg-black/20 focus:ring-primary text-sm p-3" value={formData.wifi.password} onChange={(e) => updateWifi('password', e.target.value)} />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'checkin' && (
+          <div className="space-y-6">
+            <div className="bg-primary/5 dark:bg-primary/10 p-4 rounded-2xl">
+              <h3 className="font-bold text-primary text-sm mb-4 flex items-center gap-2">
+                <span className="material-icons-outlined">login</span>
+                Informações de Check-in
+              </h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-primary uppercase mb-1 px-1">Horário de Entrada</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: 14h00" 
+                      className="w-full rounded-xl border-gray-100 bg-white dark:bg-black/20 focus:ring-primary text-sm p-3" 
+                      value={formData.checkIn.time} 
+                      onChange={(e) => updateCheckIn('time', e.target.value)} 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-primary uppercase mb-1 px-1">Código de Acesso</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: 1234 ou #5678*" 
+                      className="w-full rounded-xl border-gray-100 bg-white dark:bg-black/20 focus:ring-primary text-sm p-3 font-mono" 
+                      value={formData.checkIn.gateCode} 
+                      onChange={(e) => updateCheckIn('gateCode', e.target.value)} 
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="block text-[10px] font-bold text-primary uppercase px-1">Instruções de Entrada</label>
+                    <button 
+                      onClick={() => {
+                        if (formData) {
+                          const newStep = { id: Date.now().toString(), title: '', description: '' };
+                          setFormData({ ...formData, checkIn: { ...formData.checkIn, steps: [...formData.checkIn.steps, newStep] } });
+                        }
+                      }}
+                      className="bg-primary text-white px-3 py-1 rounded-lg text-xs flex items-center gap-1"
+                    >
+                      <span className="material-icons-outlined text-sm">add</span>
+                      Adicionar Passo
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {formData.checkIn.steps.map((step, idx) => (
+                      <div key={step.id} className="flex gap-2 items-start bg-white dark:bg-black/20 p-3 rounded-xl border border-primary/10">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">
+                          {idx + 1}
+                        </div>
+                        <div className="flex-grow space-y-2">
+                          <input 
+                            type="text"
+                            placeholder="Título do passo"
+                            className="w-full rounded-lg border-gray-100 bg-background-light/50 dark:bg-black/20 text-sm p-2 font-bold"
+                            value={step.title}
+                            onChange={(e) => {
+                              if (formData) {
+                                const newSteps = [...formData.checkIn.steps];
+                                newSteps[idx].title = e.target.value;
+                                setFormData({ ...formData, checkIn: { ...formData.checkIn, steps: newSteps } });
+                              }
+                            }}
+                          />
+                          <textarea 
+                            placeholder="Descrição detalhada"
+                            className="w-full rounded-lg border-gray-100 bg-background-light/50 dark:bg-black/20 text-sm p-2 resize-none"
+                            rows={2}
+                            value={step.description}
+                            onChange={(e) => {
+                              if (formData) {
+                                const newSteps = [...formData.checkIn.steps];
+                                newSteps[idx].description = e.target.value;
+                                setFormData({ ...formData, checkIn: { ...formData.checkIn, steps: newSteps } });
+                              }
+                            }}
+                          />
+                        </div>
+                        <button 
+                          className="text-red-400 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                          onClick={() => {
+                            if (formData) {
+                              setFormData({ 
+                                ...formData, 
+                                checkIn: { 
+                                  ...formData.checkIn, 
+                                  steps: formData.checkIn.steps.filter(s => s.id !== step.id) 
+                                } 
+                              });
+                            }
+                          }}
+                        >
+                          <span className="material-icons-outlined text-lg">delete</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-orange-50 dark:bg-orange-900/10 p-4 rounded-2xl border border-orange-200 dark:border-orange-800">
+              <h3 className="font-bold text-orange-700 dark:text-orange-400 text-sm mb-4 flex items-center gap-2">
+                <span className="material-icons-outlined">logout</span>
+                Informações de Check-out
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-orange-700 dark:text-orange-400 uppercase mb-1 px-1">Horário Limite de Saída</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ex: 11h00" 
+                    className="w-full rounded-xl border-orange-100 dark:border-orange-800 bg-white dark:bg-black/20 focus:ring-orange-500 text-sm p-3" 
+                    value={formData.checkOut.time} 
+                    onChange={(e) => updateCheckOut('time', e.target.value)} 
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="block text-[10px] font-bold text-orange-700 dark:text-orange-400 uppercase px-1">Instruções de Saída</label>
+                    <button 
+                      onClick={() => {
+                        if (formData) {
+                          const newStep = { id: Date.now().toString(), title: '', description: '' };
+                          setFormData({ ...formData, checkOut: { ...formData.checkOut, steps: [...formData.checkOut.steps, newStep] } });
+                        }
+                      }}
+                      className="bg-orange-600 text-white px-3 py-1 rounded-lg text-xs flex items-center gap-1"
+                    >
+                      <span className="material-icons-outlined text-sm">add</span>
+                      Adicionar Passo
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {formData.checkOut.steps.map((step, idx) => (
+                      <div key={step.id} className="flex gap-2 items-start bg-white dark:bg-black/20 p-3 rounded-xl border border-orange-200 dark:border-orange-800">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-600 text-white text-xs flex items-center justify-center font-bold">
+                          {idx + 1}
+                        </div>
+                        <div className="flex-grow space-y-2">
+                          <input 
+                            type="text"
+                            placeholder="Título do passo"
+                            className="w-full rounded-lg border-orange-100 dark:border-orange-800 bg-orange-50/50 dark:bg-black/20 text-sm p-2 font-bold"
+                            value={step.title}
+                            onChange={(e) => {
+                              if (formData) {
+                                const newSteps = [...formData.checkOut.steps];
+                                newSteps[idx].title = e.target.value;
+                                setFormData({ ...formData, checkOut: { ...formData.checkOut, steps: newSteps } });
+                              }
+                            }}
+                          />
+                          <textarea 
+                            placeholder="Descrição detalhada"
+                            className="w-full rounded-lg border-orange-100 dark:border-orange-800 bg-orange-50/50 dark:bg-black/20 text-sm p-2 resize-none"
+                            rows={2}
+                            value={step.description}
+                            onChange={(e) => {
+                              if (formData) {
+                                const newSteps = [...formData.checkOut.steps];
+                                newSteps[idx].description = e.target.value;
+                                setFormData({ ...formData, checkOut: { ...formData.checkOut, steps: newSteps } });
+                              }
+                            }}
+                          />
+                        </div>
+                        <button 
+                          className="text-red-400 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                          onClick={() => {
+                            if (formData) {
+                              setFormData({ 
+                                ...formData, 
+                                checkOut: { 
+                                  ...formData.checkOut, 
+                                  steps: formData.checkOut.steps.filter(s => s.id !== step.id) 
+                                } 
+                              });
+                            }
+                          }}
+                        >
+                          <span className="material-icons-outlined text-lg">delete</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
