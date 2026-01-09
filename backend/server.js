@@ -118,19 +118,30 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ error: 'Email já cadastrado' });
     }
     
+    // Verificar se é o primeiro usuário (torná-lo super admin automaticamente)
+    const userCount = await query('SELECT COUNT(*) FROM users');
+    const isFirstUser = parseInt(userCount.rows[0].count) === 0;
+    
     const hashedPassword = await bcrypt.hash(password, 10);
     const userId = Math.random().toString(36).substring(2, 15);
     const createdAt = Date.now();
     
     await query(
-      'INSERT INTO users (id, email, password, property_name, owner_name, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
-      [userId, email, hashedPassword, propertyName, ownerName, createdAt]
+      'INSERT INTO users (id, email, password, property_name, owner_name, is_super_admin, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [userId, email, hashedPassword, propertyName, ownerName, isFirstUser, createdAt]
     );
     
     const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
     
     res.status(201).json({
-      user: { id: userId, email, propertyName, ownerName, isActive: true },
+      user: { 
+        id: userId, 
+        email, 
+        propertyName, 
+        ownerName, 
+        isActive: true,
+        isSuperAdmin: isFirstUser 
+      },
       token
     });
   } catch (error) {
