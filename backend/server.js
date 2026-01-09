@@ -182,9 +182,10 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Email ou senha inválidos' });
     }
     
-    if (!user.is_active) {
+    // Verificar se a conta está suspensa (exceto para super admins)
+    if (!user.is_active && !user.is_super_admin) {
       return res.status(403).json({ 
-        error: 'Conta suspensa',
+        error: 'Conta suspensa. Sua licença de uso foi desativada.',
         suspended: true,
         adminContact: 'admin@casaverde.com'
       });
@@ -317,7 +318,13 @@ app.get('/api/admin/users', authenticate, async (req, res) => {
       );
       
       return {
-        ...user,
+        id: user.id,
+        email: user.email,
+        propertyName: user.property_name,
+        ownerName: user.owner_name,
+        isActive: user.is_active,
+        createdAt: user.created_at,
+        subscriptionExpiresAt: user.subscription_expires_at,
         paymentHistory: paymentsResult.rows
       };
     }));
