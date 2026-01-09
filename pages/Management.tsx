@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { GuideData, User } from '../types';
 import { INITIAL_GUIDE_DATA } from '../constants';
+import { api } from '../api';
 
 interface ManagementProps {
   data: GuideData; // This will now represent the "currently editing" property
@@ -10,14 +11,30 @@ interface ManagementProps {
 
 const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
   const user: User = JSON.parse(localStorage.getItem('casa_verde_user') || '{}');
-  const [allGuides, setAllGuides] = useState<{ [key: string]: GuideData }>(() => 
-    JSON.parse(localStorage.getItem('casa_verde_all_guides') || '{}')
-  );
+  const [allGuides, setAllGuides] = useState<{ [key: string]: GuideData }>({});
+  const [loading, setLoading] = useState(true);
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'property' | 'host' | 'wifi' | 'rules'>('property');
   const [formData, setFormData] = useState<GuideData | null>(null);
   const [isNewProperty, setIsNewProperty] = useState(false);
+
+  // Carregar guias da API
+  useEffect(() => {
+    loadGuides();
+  }, []);
+
+  const loadGuides = async () => {
+    try {
+      setLoading(true);
+      const guides = await api.getGuides();
+      setAllGuides(guides);
+    } catch (error) {
+      console.error('Erro ao carregar guias:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Fix: Explicitly cast guide objects to GuideData to resolve property access errors
   const myProperties = Object.values(allGuides).filter((g: any) => g.hostId === user.id) as GuideData[];
@@ -44,18 +61,22 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
     startEditing(newProperty, true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData || !editingId) {
       console.log('handleSave: missing data', { formData, editingId });
       return;
     }
-    const updated = { ...allGuides, [editingId]: formData };
-    setAllGuides(updated);
-    localStorage.setItem('casa_verde_all_guides', JSON.stringify(updated));
-    setEditingId(null);
-    setFormData(null);
-    setIsNewProperty(false);
-    alert('Configurações salvas com sucesso!');
+    
+    try {
+      await api.saveGuide(editingId, formData);
+      await loadGuides(); // Recarregar guias
+      setEditingId(null);
+      setFormData(null);
+      setIsNewProperty(false);
+      alert('Configurações salvas com sucesso!');
+    } catch (error: any) {
+      alert(error.message || 'Erro ao salvar. Tente novamente.');
+    }
   };
 
   const handleCancel = () => {
@@ -72,11 +93,15 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
     alert('Link do hóspede copiado!');
   };
 
-  const deleteProperty = (id: string) => {
+  const deleteProperty = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir esta propriedade e todo o seu guia?')) {
-      const { [id]: _, ...rest } = allGuides;
-      setAllGuides(rest);
-      localStorage.setItem('casa_verde_all_guides', JSON.stringify(rest));
+      try {
+        await api.deleteGuide(id);
+        await loadGuides();
+        alert('Propriedade excluída com sucesso!');
+      } catch (error: any) {
+        alert(error.message || 'Erro ao excluir. Tente novamente.');
+      }
     }
   };
 
