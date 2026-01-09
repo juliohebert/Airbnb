@@ -17,13 +17,15 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'property' | 'host' | 'wifi' | 'rules'>('property');
   const [formData, setFormData] = useState<GuideData | null>(null);
+  const [isNewProperty, setIsNewProperty] = useState(false);
 
   // Fix: Explicitly cast guide objects to GuideData to resolve property access errors
   const myProperties = Object.values(allGuides).filter((g: any) => g.hostId === user.id) as GuideData[];
 
-  const startEditing = (property: GuideData) => {
+  const startEditing = (property: GuideData, isNew: boolean = false) => {
     setFormData(property);
     setEditingId(property.propertyId || property.hostId); // Fallback for legacy data
+    setIsNewProperty(isNew);
     window.scrollTo(0, 0);
   };
 
@@ -38,20 +40,30 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
         name: "Nova Propriedade"
       }
     };
-    const updated = { ...allGuides, [newId]: newProperty };
-    setAllGuides(updated);
-    localStorage.setItem('casa_verde_all_guides', JSON.stringify(updated));
-    startEditing(newProperty);
+    // Não salva imediatamente - só ao clicar em Salvar
+    startEditing(newProperty, true);
   };
 
   const handleSave = () => {
-    if (!formData || !editingId) return;
+    if (!formData || !editingId) {
+      console.log('handleSave: missing data', { formData, editingId });
+      return;
+    }
     const updated = { ...allGuides, [editingId]: formData };
     setAllGuides(updated);
     localStorage.setItem('casa_verde_all_guides', JSON.stringify(updated));
     setEditingId(null);
     setFormData(null);
+    setIsNewProperty(false);
     alert('Configurações salvas com sucesso!');
+  };
+
+  const handleCancel = () => {
+    console.log('handleCancel called');
+    // Se for nova propriedade e cancelar, não salva nada
+    setEditingId(null);
+    setFormData(null);
+    setIsNewProperty(false);
   };
 
   const copyLink = (id: string) => {
@@ -159,11 +171,13 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
   }
 
   // Editing View (Specific Property)
+  if (!formData) return null;
+
   return (
-    <div className="max-w-4xl mx-auto pt-2 pb-24 relative">
+    <div className="max-w-4xl mx-auto pt-2 pb-48 relative">
       <div className="flex items-center gap-4 mb-8">
         <button 
-          onClick={() => { setEditingId(null); setFormData(null); }}
+          onClick={handleCancel}
           className="p-2 bg-primary/10 text-primary rounded-full hover:bg-primary hover:text-white transition-all"
         >
           <span className="material-icons-outlined">arrow_back</span>
@@ -212,7 +226,7 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
         ))}
       </div>
 
-      <div className="bg-white dark:bg-card-dark p-6 md:p-8 rounded-3xl shadow-soft space-y-6 border border-primary/10 mb-20">
+      <div className="bg-white dark:bg-card-dark p-6 md:p-8 rounded-3xl shadow-soft space-y-6 border border-primary/10 mb-32">
         {activeTab === 'property' && (
           <div className="space-y-4">
             <div>
@@ -303,17 +317,17 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
         )}
       </div>
 
-      <div className="fixed bottom-6 left-0 right-0 px-4 md:px-0 flex justify-center pointer-events-none">
-        <div className="flex gap-3 w-full max-w-lg pointer-events-auto">
+      <div className="fixed bottom-6 left-0 right-0 px-4 md:px-0 flex justify-center z-50">
+        <div className="flex gap-3 w-full max-w-lg">
           <button 
-            onClick={() => { setEditingId(null); setFormData(null); }}
-            className="flex-1 bg-white dark:bg-card-dark text-gray-400 py-4 rounded-2xl font-bold shadow-xl border border-gray-100 dark:border-primary/10"
+            onClick={handleCancel}
+            className="flex-1 bg-white dark:bg-card-dark text-gray-400 py-4 rounded-2xl font-bold shadow-xl border border-gray-100 dark:border-primary/10 hover:bg-gray-50 transition-colors cursor-pointer"
           >
             Cancelar
           </button>
           <button 
             onClick={handleSave}
-            className="flex-[2] bg-primary text-white py-4 rounded-2xl font-bold shadow-2xl active:scale-95 transition-transform flex items-center justify-center gap-2"
+            className="flex-[2] bg-primary text-white py-4 rounded-2xl font-bold shadow-2xl active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-primary-light cursor-pointer"
           >
             <span className="material-icons-outlined">save</span>
             Salvar Alterações
