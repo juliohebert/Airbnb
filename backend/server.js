@@ -293,11 +293,25 @@ app.get('/api/admin/users', authenticate, async (req, res) => {
       return res.status(403).json({ error: 'Acesso negado' });
     }
     
-    const result = await query(
+    // Buscar usuários
+    const usersResult = await query(
       'SELECT id, email, property_name, owner_name, is_active, created_at, subscription_expires_at FROM users ORDER BY created_date DESC'
     );
     
-    res.json(result.rows);
+    // Buscar histórico de pagamentos para cada usuário
+    const users = await Promise.all(usersResult.rows.map(async (user) => {
+      const paymentsResult = await query(
+        'SELECT id, date, amount, status, method FROM payment_records WHERE user_id = $1 ORDER BY date DESC',
+        [user.id]
+      );
+      
+      return {
+        ...user,
+        paymentHistory: paymentsResult.rows
+      };
+    }));
+    
+    res.json(users);
   } catch (error) {
     console.error('Erro ao buscar usuários:', error);
     res.status(500).json({ error: 'Erro ao buscar usuários' });
@@ -322,6 +336,78 @@ app.patch('/api/admin/users/:userId', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Erro ao atualizar usuário:', error);
     res.status(500).json({ error: 'Erro ao atualizar usuário' });
+  }
+});
+
+// Super Admin - Registrar pagamento
+app.post('/api/admin/payments', authenticate, async (req, res) => {
+  try {
+    if (!req.user.is_super_admin) {
+      return res.status(403).json({ error: 'Acesso negado' });
+    }
+    
+    const { userId, amount, method } = req.body;
+    
+    if (!userId || !amount) {
+      return res.status(400).json({ error: 'UserId e amount são obrigatórios' });
+    }
+    
+    // Criar registro de pagamento
+    const paymentId = Math.random().toString(36).substring(2, 15);
+    const paymentDate = Date.now();
+    
+    await query(
+      'INSERT INTO payment_records (id, user_id, date, amount, status, method) VALUES ($1, $2, $3, $4, $5, $6)',
+      [paymentId, userId, paymentDate, amount, 'paid', method || 'Pix/Cartão']
+    );
+    
+    // Atualizar usuário: ativar e renovar por 30 dias
+    const userResult = await query(
+      'SELECT subscription_expires_at FROM users WHERE id = $1',
+      [userId]
+    );
+    
+    const currentExpiry = userResult.rows[0]?.subscription_expires_at || Date.now();
+    const newExpiry = Math.max(currentExpiry, Date.now()) + (30 * 24 * 60 * 60 * 1000);
+    
+    await query(
+      'UPDATE users SET is_active = true, subscription_expires_at = $1, updated_date = CURRENT_TIMESTAMP WHERE id = $2',
+      [newExpiry, userId]
+    );
+    
+    res.json({ 
+      success: true, 
+      payment: {
+        id: paymentId,
+        date: paymentDate,
+        amount,
+        status: 'paid',
+        method: method || 'Pix/Cartão'
+      },
+      newExpiry 
+    });
+  } catch (error) {
+    console.error('Erro ao registrar pagamento:', error);
+    res.status(500).json({ error: 'Erro ao registrar pagamento' });
+  }
+});
+
+// Super Admin - Buscar histórico de pagamentos do usuário
+app.get('/api/admin/payments/:userId', authenticate, async (req, res) => {
+  try {
+    if (!req.user.is_super_admin) {
+      return res.status(403).json({ error: 'Acesso negado' });
+    }
+    
+    const result = await query(
+      'SELECT * FROM payment_records WHERE user_id = $1 ORDER BY date DESC',
+      [req.params.userId]
+    );
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Erro ao buscar pagamentos:', error);
+    res.status(500).json({ error: 'Erro ao buscar pagamentos' });
   }
 });
 

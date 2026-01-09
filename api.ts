@@ -97,6 +97,17 @@ export const api = {
     });
   },
 
+  async registerPayment(userId, amount, method = 'Pix/Cartão') {
+    return this.request('/api/admin/payments', {
+      method: 'POST',
+      body: JSON.stringify({ userId, amount, method }),
+    });
+  },
+
+  async getPaymentHistory(userId) {
+    return this.request(`/api/admin/payments/${userId}`);
+  },
+
   // Promover usuário atual a super admin
   async promoteToSuperAdmin() {
     return this.request('/api/admin/promote', {

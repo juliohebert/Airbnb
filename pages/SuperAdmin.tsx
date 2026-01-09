@@ -59,10 +59,24 @@ const SuperAdmin: React.FC = () => {
   const registerPayment = async () => {
     if (!selectedUser) return;
     
-    // TODO: Implementar endpoint de pagamento no backend
-    alert('Funcionalidade de pagamento será implementada em breve. Por enquanto, use o botão de Ativar/Suspender para gerenciar o acesso dos usuários.');
-    setShowPaymentModal(false);
-    setSelectedUser(null);
+    try {
+      setLoading(true);
+      
+      const amount = parseFloat(paymentAmount);
+      await api.registerPayment(selectedUser.id, amount, 'Pix/Cartão');
+      
+      // Recarregar lista de usuários
+      await loadUsers();
+      
+      setShowPaymentModal(false);
+      setSelectedUser(null);
+      alert('Pagamento registrado e licença renovada por 30 dias!');
+    } catch (error) {
+      console.error('Erro ao registrar pagamento:', error);
+      alert('Erro ao registrar pagamento. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatCurrency = (val: number) => 
