@@ -91,7 +91,18 @@ const authenticate = async (req, res, next) => {
       return res.status(401).json({ error: 'Usuário não encontrado' });
     }
     
-    req.user = result.rows[0];
+    const user = result.rows[0];
+    
+    // Verificar se a conta está ativa (exceto para super admins)
+    if (!user.is_active && !user.is_super_admin) {
+      return res.status(403).json({ 
+        error: 'Conta suspensa',
+        suspended: true,
+        message: 'Sua licença de uso foi desativada. Entre em contato com o administrador.'
+      });
+    }
+    
+    req.user = user;
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Token inválido' });

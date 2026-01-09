@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { GuideData, User } from '../types';
 import { INITIAL_GUIDE_DATA } from '../constants';
 import { api } from '../api';
@@ -10,6 +11,7 @@ interface ManagementProps {
 }
 
 const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
+  const navigate = useNavigate();
   const user: User = JSON.parse(localStorage.getItem('casa_verde_user') || '{}');
   const [allGuides, setAllGuides] = useState<{ [key: string]: GuideData }>({});
   const [loading, setLoading] = useState(true);
@@ -18,6 +20,16 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
   const [activeTab, setActiveTab] = useState<'property' | 'host' | 'wifi' | 'checkin' | 'amenities' | 'rules'>('property');
   const [formData, setFormData] = useState<GuideData | null>(null);
   const [isNewProperty, setIsNewProperty] = useState(false);
+
+  // Verificar status da conta ao carregar
+  useEffect(() => {
+    if (user.isActive === false) {
+      localStorage.removeItem('casa_verde_token');
+      localStorage.removeItem('casa_verde_user');
+      alert('Sua conta foi suspensa. Entre em contato com o administrador.');
+      navigate('/login');
+    }
+  }, [user.isActive, navigate]);
 
   // Carregar guias da API
   useEffect(() => {
@@ -29,8 +41,16 @@ const Management: React.FC<ManagementProps> = ({ data, onUpdate }) => {
       setLoading(true);
       const guides = await api.getGuides();
       setAllGuides(guides);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar guias:', error);
+      
+      // Se for erro 403 (conta suspensa), fazer logout
+      if (error.message?.includes('403') || error.message?.includes('Acesso negado')) {
+        localStorage.removeItem('casa_verde_token');
+        localStorage.removeItem('casa_verde_user');
+        alert('Sua conta foi suspensa. Entre em contato com o administrador.');
+        navigate('/login');
+      }
     } finally {
       setLoading(false);
     }

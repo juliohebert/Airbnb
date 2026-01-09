@@ -174,8 +174,27 @@ const App: React.FC = () => {
 };
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const user = localStorage.getItem('casa_verde_user');
-  if (!user) return <Navigate to="/login" replace />;
+  const userStr = localStorage.getItem('casa_verde_user');
+  
+  if (!userStr) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  try {
+    const user = JSON.parse(userStr);
+    
+    // Verificar se o usuário está ativo
+    if (user.isActive === false) {
+      // Limpar sessão
+      localStorage.removeItem('casa_verde_token');
+      localStorage.removeItem('casa_verde_user');
+      return <Navigate to="/login" replace />;
+    }
+  } catch (error) {
+    console.error('Erro ao verificar usuário:', error);
+    return <Navigate to="/login" replace />;
+  }
+  
   return <>{children}</>;
 };
 
