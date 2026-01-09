@@ -1,29 +1,31 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { api } from '../api';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [suspendedUser, setSuspendedUser] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setSuspendedUser(false);
+    setLoading(true);
     
-    const users = JSON.parse(localStorage.getItem('casa_verde_users') || '[]');
-    const user = users.find((u: any) => u.email === email && u.password === password);
-
-    if (user) {
-      if (!user.isActive) {
-        setSuspendedUser(true);
-        return;
-      }
-      localStorage.setItem('casa_verde_user', JSON.stringify(user));
+    try {
+      await api.login(email, password);
       navigate('/admin');
-    } else {
-      alert('Credenciais inválidas. Verifique seu e-mail e senha ou cadastre-se.');
+    } catch (error: any) {
+      if (error.message.includes('suspensa')) {
+        setSuspendedUser(true);
+      } else {
+        alert(error.message || 'Credenciais inválidas. Verifique seu e-mail e senha ou cadastre-se.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -86,14 +88,14 @@ const Login: React.FC = () => {
           </div>
           <button 
             type="submit" 
-            disabled={suspendedUser}
+            disabled={suspendedUser || loading}
             className={`w-full py-3 rounded-xl font-bold shadow-lg transition-all ${
-              suspendedUser 
+              suspendedUser || loading
               ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
               : 'bg-primary text-white hover:bg-primary-light'
             }`}
           >
-            Entrar
+            {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
 

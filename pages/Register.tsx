@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { api } from '../api';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -9,33 +10,28 @@ const Register: React.FC = () => {
     propertyName: '',
     ownerName: ''
   });
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    const users = JSON.parse(localStorage.getItem('casa_verde_users') || '[]');
-    
-    if (users.find((u: any) => u.email === formData.email)) {
-      alert('Este e-mail já está cadastrado.');
-      return;
+    setLoading(true);
+
+    try {
+      await api.register(
+        formData.email,
+        formData.password,
+        formData.propertyName,
+        formData.ownerName
+      );
+      
+      alert('Conta criada com sucesso!');
+      navigate('/admin');
+    } catch (error: any) {
+      alert(error.message || 'Erro ao criar conta. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
-
-    const hostId = Math.random().toString(36).substring(2, 9);
-    const newUser = {
-      id: hostId,
-      email: formData.email,
-      password: formData.password,
-      propertyName: formData.propertyName,
-      ownerName: formData.ownerName,
-      isActive: true,
-      createdAt: Date.now(),
-      subscriptionExpiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 days trial
-      paymentHistory: []
-    };
-
-    localStorage.setItem('casa_verde_users', JSON.stringify([...users, newUser]));
-    localStorage.setItem('casa_verde_user', JSON.stringify(newUser));
-    navigate('/admin');
   };
 
   return (
@@ -86,8 +82,12 @@ const Register: React.FC = () => {
               onChange={(e) => setFormData({...formData, password: e.target.value})}
             />
           </div>
-          <button type="submit" className="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg hover:bg-primary-light transition-colors">
-            Cadastrar e Começar
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg hover:bg-primary-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Cadastrando...' : 'Cadastrar e Começar'}
           </button>
         </form>
 
